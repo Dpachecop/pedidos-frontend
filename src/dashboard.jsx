@@ -3,9 +3,8 @@ import axios from 'axios';
 
 function Dashboard({ credenciales, onLogout }) {
   const [pedidos, setPedidos] = useState([]);
-  const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null); // Para el modal de detalles
+  const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
   
-  // Estado inicial del formulario con TODOS los campos de tu entidad Java
   const initialState = {
     cliente: '',
     proveedor: '',
@@ -20,6 +19,7 @@ function Dashboard({ credenciales, onLogout }) {
 
   const [nuevoPedido, setNuevoPedido] = useState(initialState);
   
+  // URL de tu backend
   const API_URL = 'https://pedidoshexagonales.onrender.com/api/v1';
   
   const axiosConfig = {
@@ -46,7 +46,6 @@ function Dashboard({ credenciales, onLogout }) {
 
   const handleCrear = (e) => {
     e.preventDefault();
-    // Convertimos a números lo que debe ser número
     const payload = {
         ...nuevoPedido,
         valor: parseFloat(nuevoPedido.valor),
@@ -56,8 +55,8 @@ function Dashboard({ credenciales, onLogout }) {
     axios.post(`${API_URL}/pedidos`, payload, axiosConfig)
       .then(() => {
         alert('Pedido creado exitosamente');
-        setNuevoPedido(initialState); // Limpiar form
-        cargarPedidos(); // Recargar lista
+        setNuevoPedido(initialState);
+        cargarPedidos();
       })
       .catch(err => {
         console.error(err);
@@ -65,12 +64,28 @@ function Dashboard({ credenciales, onLogout }) {
       });
   };
 
-  // Función para abrir el modal
+  // --- NUEVA FUNCIÓN PARA ELIMINAR ---
+  const handleEliminar = () => {
+    if (!pedidoSeleccionado) return;
+
+    if (window.confirm(`¿Estás seguro de que quieres eliminar el pedido #${pedidoSeleccionado.id}? Esta acción no se puede deshacer.`)) {
+      axios.delete(`${API_URL}/pedidos/${pedidoSeleccionado.id}`, axiosConfig)
+        .then(() => {
+          alert('Pedido eliminado correctamente');
+          cerrarModal();   // Cerramos el modal
+          cargarPedidos(); // Refrescamos la lista
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Error al eliminar el pedido. Revisa la consola.');
+        });
+    }
+  };
+
   const verDetalles = (pedido) => {
     setPedidoSeleccionado(pedido);
   };
 
-  // Función para cerrar el modal
   const cerrarModal = () => {
     setPedidoSeleccionado(null);
   };
@@ -83,7 +98,7 @@ function Dashboard({ credenciales, onLogout }) {
       </div>
 
       <div className="row">
-        {/* --- FORMULARIO DE CREACIÓN (IZQUIERDA) --- */}
+        {/* FORMULARIO */}
         <div className="col-md-5 mb-4">
           <div className="card shadow-sm">
             <div className="card-header bg-primary text-white">
@@ -102,7 +117,6 @@ function Dashboard({ credenciales, onLogout }) {
                     <input name="proveedor" type="text" className="form-control form-control-sm" 
                       value={nuevoPedido.proveedor} onChange={handleChange} required placeholder="Empresa Prov."/>
                   </div>
-
                   <div className="col-md-6 mb-2">
                     <label className="form-label small">Valor Base ($)</label>
                     <input name="valor" type="number" className="form-control form-control-sm" 
@@ -113,10 +127,8 @@ function Dashboard({ credenciales, onLogout }) {
                     <input name="propina" type="number" className="form-control form-control-sm" 
                       value={nuevoPedido.propina} onChange={handleChange} />
                   </div>
-
                   <div className="col-12"><hr className="my-1"/></div>
                   <h6 className="small text-muted mb-2">Datos de Envío</h6>
-
                   <div className="col-md-4 mb-2">
                     <input name="pais" type="text" className="form-control form-control-sm" 
                       value={nuevoPedido.pais} onChange={handleChange} placeholder="País" required/>
@@ -134,14 +146,13 @@ function Dashboard({ credenciales, onLogout }) {
                       value={nuevoPedido.nomenclaturaVivienda} onChange={handleChange} placeholder="Dirección / Nomenclatura" required/>
                   </div>
                 </div>
-
                 <button className="btn btn-primary w-100">Registrar Pedido</button>
               </form>
             </div>
           </div>
         </div>
 
-        {/* --- LISTA DE PEDIDOS (DERECHA) --- */}
+        {/* LISTA */}
         <div className="col-md-7">
           <div className="card shadow-sm">
             <div className="card-header bg-light">
@@ -174,7 +185,7 @@ function Dashboard({ credenciales, onLogout }) {
         </div>
       </div>
 
-      {/* --- MODAL DE DETALLES (POPUP) --- */}
+      {/* MODAL CON BOTÓN DE ELIMINAR */}
       {pedidoSeleccionado && (
         <div className="modal d-block" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
           <div className="modal-dialog modal-dialog-centered">
@@ -215,8 +226,14 @@ function Dashboard({ credenciales, onLogout }) {
                     <span className="text-success">${pedidoSeleccionado.valorTotal}</span>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={cerrarModal}>Cerrar</button>
+              <div className="modal-footer justify-content-between">
+                {/* BOTÓN ROJO DE ELIMINAR */}
+                <button type="button" className="btn btn-danger" onClick={handleEliminar}>
+                  🗑️ Eliminar
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={cerrarModal}>
+                  Cerrar
+                </button>
               </div>
             </div>
           </div>
